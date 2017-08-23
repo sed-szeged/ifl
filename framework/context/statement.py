@@ -3,6 +3,7 @@ from csv import DictReader
 
 class Statement:
 
+    SCORE_TYPE = "ochiai"
     SEPARATOR = ':'
 
     def __init__(self, file, line, score, name):
@@ -29,7 +30,7 @@ class Statement:
 
         assert len(parts) == 2
 
-        return Statement(parts[0], int(parts[1]), float(row["tarantula"]), row["name"])
+        return Statement(parts[0], int(parts[1]), float(row[Statement.SCORE_TYPE]), row["name"])
 
 
 class StatementSet:
