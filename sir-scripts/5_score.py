@@ -88,7 +88,7 @@ for program in natsorted(listdir(data_dir)):
                 scores[code_elements[ce_id]] = data
 
             with open("%s.csv" % splitext(consolidated_json)[0], 'w') as score_csv:
-                field_names = ["name", "tarantula", "ochiai", "faulty"]
+                field_names = ["name", "tarantula", "ochiai", "dstar", "faulty"]
                 writer = DictWriter(score_csv, fieldnames=field_names, delimiter=';')
                 writer.writeheader()
 
@@ -97,6 +97,7 @@ for program in natsorted(listdir(data_dir)):
                         "name": ce_name,
                         "tarantula": data["tarantula"],
                         "ochiai": data["ochiai"],
+                        "dstar": data["dstar"],
                         "faulty": ce_name in change_matrix.get_changes(version)
                     }
                     writer.writerow(data)
