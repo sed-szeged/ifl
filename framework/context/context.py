@@ -53,7 +53,7 @@ class SIRContext:
 
             for stmt in self.statement_set.statements:
                 data = {
-                    "Name" : str(stmt),
+                    "Name" : stmt.name,
                     "Score" : stmt.score,
                     "Faulty" : self.is_faulty(stmt)
                 }
