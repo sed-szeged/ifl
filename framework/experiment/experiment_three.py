@@ -5,10 +5,10 @@ from framework.core.mediator import Mediator
 from framework.core.oracle import Oracle
 from framework.core.questioner import Questioner
 from framework.exception import InvalidAnswerException
-from framework.experiment.experiment import SIRExperiment
+from framework.experiment.experiment import Experiment
 
 
-class ExperimentThree(SIRExperiment):
+class ExperimentThree(Experiment):
 
     class Questioner(Questioner):
 
@@ -18,8 +18,8 @@ class ExperimentThree(SIRExperiment):
             self.subject = None
 
         def next_subject(self):
-            self.subject = sorted(self.context.statement_set.statements,
-                             key=lambda stmt: (-stmt.score, stmt.file, stmt.line))[0]
+            self.subject = sorted(self.context.code_element_set.code_elements,
+                                  key=lambda ce: (-ce.score, ce.name))[0]
             return self.subject
 
         def acknowledge(self, answer):
@@ -34,15 +34,15 @@ class ExperimentThree(SIRExperiment):
                 neighbours = self.context.get_neighbours(self.subject)
                 neighbours.remove(self.subject)
 
-                sum_scores = sum([statement.score for statement in neighbours])
+                sum_scores = sum([ce.score for ce in neighbours])
 
-                for statement in neighbours:
-                    vector = self.context.coverage_matrix.get_coverage_for_code_element(statement.name)
+                for ce in neighbours:
+                    vector = self.context.coverage_matrix.get_coverage_for_code_element(ce.name)
                     distance = self.distance_function(base_vector, vector)
 
-                    share = self.subject.score * (statement.score / sum_scores) * (1 - distance)
+                    share = self.subject.score * (ce.score / sum_scores) * (1 - distance)
 
-                    statement.score = min([1, statement.score + share])
+                    ce.score = min([1, ce.score + share])
 
                 self.subject.score = 0
             else:
@@ -58,7 +58,7 @@ class ExperimentThree(SIRExperiment):
                 return Answer.YES
             else:
                 neighbours = self.context.get_neighbours(subject)
-                faulty_neighbours = [statement for statement in neighbours if self.context.is_faulty(statement)]
+                faulty_neighbours = [ce for ce in neighbours if self.context.is_faulty(ce)]
 
                 if len(faulty_neighbours) == 0:
                     return Answer.NO_AND_NOT_SUSPICIOUS
@@ -66,7 +66,7 @@ class ExperimentThree(SIRExperiment):
                     return Answer.NO_BUT_SUSPICIOUS
 
     def configure(self):
-        questioner = ExperimentThree.Questioner(self.context, lambda u, v: 1 - hamming(u, v))
-        oracle = ExperimentThree.Oracle(self.context)
+        questioner = self.Questioner(self.context, lambda u, v: 1 - hamming(u, v))
+        oracle = self.Oracle(self.context)
 
         self.mediator = Mediator(self.context, questioner, oracle)

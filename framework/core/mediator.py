@@ -1,7 +1,7 @@
 from framework.core.answer import Answer
 
 
-class Mediator:
+class Mediator(object):
 
     def __init__(self, context, questioner, oracle):
         self.context = context
@@ -16,7 +16,7 @@ class Mediator:
 
             iteration += 1
 
-            if iteration > len(self.context.statement_set.statements):
+            if iteration > len(self.context.code_element_set.code_elements):
                 print("TOO MUCH ITERATIONS :( [%d]" % iteration)
                 break
 

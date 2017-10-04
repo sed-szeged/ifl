@@ -1,9 +1,11 @@
 import argparse
 
+from framework.context.code_element import CodeElement
+from framework.context.context import SIRContext
 from framework.experiment.experiment_one import ExperimentOne
+from framework.experiment.experiment_one import ExperimentOneB
 from framework.experiment.experiment_three import ExperimentThree
 from framework.experiment.experiment_two import ExperimentTwo
-from framework.context.statement import Statement
 
 parser = argparse.ArgumentParser(description="Executes experiments.")
 parser.add_argument("-d", "--datadir", required=True,
@@ -14,12 +16,13 @@ parser.add_argument("-s", "--score", choices=["dstar", "ochiai", "tarantula"], d
 
 args = parser.parse_args()
 
-Statement.SCORE_TYPE = args.score
+CodeElement.SCORE_TYPE = args.score
 
 experiments = [
-    ExperimentOne("ex1"),
-    ExperimentTwo("ex2"),
-    ExperimentThree("ex3")
+    ExperimentOne("ex1", SIRContext),
+    ExperimentOneB("ex1b", SIRContext),
+    ExperimentTwo("ex2", SIRContext),
+    ExperimentThree("ex3", SIRContext)
 ]
 
 for experiment in experiments:

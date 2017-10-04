@@ -1,11 +1,11 @@
-class CoverageMatrix:
+class CoverageMatrix(object):
 
     def __init__(self):
-        self.tests = dict()
-        self.test_to_ids = dict()
-        self.code_elements = dict()
-        self.code_elements_to_ids = dict()
-        self.data = list()
+        self.tests = {}
+        self.test_to_ids = {}
+        self.code_elements = {}
+        self.code_elements_to_ids = {}
+        self.data = []
 
     def get_coverage_for_code_element_id(self, code_element_id):
         return [row[code_element_id] for row in self.data]
@@ -27,7 +27,7 @@ class CoverageMatrix:
     def load_from_file(cls, file_path):
         matrix = CoverageMatrix()
 
-        with open(file_path, 'r') as csvfile:
+        with open(file_path, 'r', encoding='utf-8') as csvfile:
             tc_id = -1
 
             for line in csvfile:

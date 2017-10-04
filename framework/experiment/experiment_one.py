@@ -3,10 +3,10 @@ from framework.core.mediator import Mediator
 from framework.core.oracle import Oracle
 from framework.core.questioner import Questioner
 from framework.exception import InvalidAnswerException
-from framework.experiment.experiment import SIRExperiment
+from framework.experiment.experiment import Experiment
 
 
-class ExperimentOne(SIRExperiment):
+class ExperimentOne(Experiment):
 
     class Questioner(Questioner):
 
@@ -15,16 +15,16 @@ class ExperimentOne(SIRExperiment):
             self.subject = None
 
         def next_subject(self):
-            self.subject = sorted(self.context.statement_set.statements,
-                             key=lambda stmt: (-stmt.score, stmt.file, stmt.line))[0]
+            self.subject = sorted(self.context.code_element_set.code_elements,
+                                  key=lambda ce: (-ce.score, ce.name))[0]
             return self.subject
 
         def acknowledge(self, answer):
-            if answer == Answer.NO:
+            if answer == Answer.NO_BUT_SUSPICIOUS:
                 self.subject.score = 0
             elif answer == Answer.NO_AND_NOT_SUSPICIOUS:
-                for statement in self.context.get_neighbours(self.subject):
-                    statement.score = 0
+                for ce in self.context.get_neighbours(self.subject):
+                    ce.score = 0
             else:
                 raise InvalidAnswerException(answer)
 
@@ -38,15 +38,35 @@ class ExperimentOne(SIRExperiment):
                 return Answer.YES
             else:
                 neighbours = self.context.get_neighbours(subject)
-                faulty_neighbours = [statement for statement in neighbours if self.context.is_faulty(statement)]
+                faulty_neighbours = [ce for ce in neighbours if self.context.is_faulty(ce)]
 
                 if len(faulty_neighbours) == 0:
                     return Answer.NO_AND_NOT_SUSPICIOUS
                 else:
-                    return Answer.NO
+                    return Answer.NO_BUT_SUSPICIOUS
 
     def configure(self):
-        questioner = ExperimentOne.Questioner(self.context)
-        oracle = ExperimentOne.Oracle(self.context)
+        questioner = self.Questioner(self.context)
+        oracle = self.Oracle(self.context)
 
         self.mediator = Mediator(self.context, questioner, oracle)
+
+
+class ExperimentOneB(ExperimentOne):
+
+    class Questioner(ExperimentOne.Questioner):
+
+        def acknowledge(self, answer):
+            neighbours = self.context.get_neighbours(self.subject)
+
+            if answer == Answer.NO_BUT_SUSPICIOUS:
+                self.subject.score = 0
+
+                for ce in self.context.code_element_set.code_elements:
+                    if ce not in neighbours:
+                        ce.score = 0
+            elif answer == Answer.NO_AND_NOT_SUSPICIOUS:
+                for ce in neighbours:
+                    ce.score = 0
+            else:
+                raise InvalidAnswerException(answer)

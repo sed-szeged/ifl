@@ -1,10 +1,9 @@
-
-class ChangeMatrix:
+class ChangeMatrix(object):
 
     def __init__(self):
         self.versions = []
         self.code_elements = []
-        self.changes = dict()
+        self.changes = {}
 
     def get_changes(self, version):
         for index, value in enumerate(self.changes[version]):
@@ -15,7 +14,7 @@ class ChangeMatrix:
     def load_from_file(cls, csv_file_path, separator=';'):
         matrix = ChangeMatrix()
 
-        with open(csv_file_path, 'r') as csv_file:
+        with open(csv_file_path, 'r', encoding="utf-8") as csv_file:
             i = 1
 
             for line in csv_file:

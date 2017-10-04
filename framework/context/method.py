@@ -1,7 +1,7 @@
 from csv import DictReader
 
 
-class MethodDefinition:
+class MethodDefinition(object):
 
     def __init__(self, name, file, begin_line, end_line):
         self.name = name
@@ -17,7 +17,7 @@ class MethodDefinition:
         return MethodDefinition(row["LongName"], row["Path"], int(row["Line"]), int(row["EndLine"]))
 
 
-class MethodSet:
+class MethodSet(object):
 
     def __init__(self):
         self.methods = set()
@@ -31,7 +31,7 @@ class MethodSet:
     def load_from_file(cls, filepath):
         method_set = MethodSet()
 
-        with open(filepath, 'r') as csvfile:
+        with open(filepath, 'r', encoding='utf-8') as csvfile:
             reader = DictReader(csvfile)
 
             for row in reader:
