@@ -12,7 +12,8 @@ class Mediator(object):
         iteration = 0
 
         while True:
-            self.context.save_scores(output_dir, iteration)
+            if iteration == 0:
+                self.context.save_scores(output_dir, iteration)
 
             iteration += 1
 
@@ -35,3 +36,5 @@ class Mediator(object):
                 break
 
             self.questioner.acknowledge(answer)
+
+        self.context.save_scores(output_dir, iteration)

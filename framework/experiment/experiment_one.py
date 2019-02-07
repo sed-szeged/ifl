@@ -1,3 +1,5 @@
+from random import randint
+
 from framework.core.answer import Answer
 from framework.core.mediator import Mediator
 from framework.core.oracle import Oracle
@@ -40,10 +42,15 @@ class ExperimentOne(Experiment):
                 neighbours = self.context.get_neighbours(subject)
                 faulty_neighbours = [ce for ce in neighbours if self.context.is_faulty(ce)]
 
-                if len(faulty_neighbours) == 0:
-                    return Answer.NO_AND_NOT_SUSPICIOUS
+                r = randint(0, 100)
+
+                if r > self.context.knowledge:
+                    return Answer.NO
                 else:
-                    return Answer.NO_BUT_SUSPICIOUS
+                    if len(faulty_neighbours) == 0:
+                        return Answer.NO_AND_NOT_SUSPICIOUS
+                    else:
+                        return Answer.NO_BUT_SUSPICIOUS
 
     def configure(self):
         questioner = self.Questioner(self.context)
@@ -59,14 +66,16 @@ class ExperimentOneB(ExperimentOne):
         def acknowledge(self, answer):
             neighbours = self.context.get_neighbours(self.subject)
 
-            if answer == Answer.NO_BUT_SUSPICIOUS:
-                self.subject.score = 0
+            if answer == Answer.NO:
+                self.subject.score *= (1 - self.context.confidence / 100)
+            elif answer == Answer.NO_BUT_SUSPICIOUS:
+                self.subject.score *= (1 - self.context.confidence / 100)
 
                 for ce in self.context.code_element_set.code_elements:
                     if ce not in neighbours:
-                        ce.score = 0
+                        ce.score *= (1 - self.context.confidence / 100)
             elif answer == Answer.NO_AND_NOT_SUSPICIOUS:
                 for ce in neighbours:
-                    ce.score = 0
+                    ce.score *= (1 - self.context.confidence / 100)
             else:
                 raise InvalidAnswerException(answer)

@@ -19,7 +19,7 @@ class Experiment(object):
     def configure(self):
         raise NotImplementedError
 
-    def run(self, data_dir, output_dir):
+    def run(self, data_dir, output_dir, knowledge=100, confidence=100):
         output_dir = j(output_dir, self.name)
         rm(output_dir, "*")
 
@@ -39,9 +39,9 @@ class Experiment(object):
             coverage_csv = j(data_dir, program["name"], "%(name)s.%(version)s.cov.csv" % program)
 
             if self.context_type is SIRContext:
-                self.context = SIRContext(score_csv, function_csv, change_csv, coverage_csv, program)
+                self.context = SIRContext(score_csv, function_csv, change_csv, coverage_csv, program, knowledge=knowledge, confidence=confidence)
             elif self.context_type is Defects4JContext:
-                self.context = Defects4JContext(score_csv, change_csv, coverage_csv, program)
+                self.context = Defects4JContext(score_csv, change_csv, coverage_csv, program, knowledge=knowledge, confidence=confidence)
             else:
                 raise Exception("Unknown context_type '%s'" % self.context_type)
 

@@ -12,11 +12,13 @@ from framework.context.method import MethodSet
 
 class Context(object):
 
-    def __init__(self, score_csv_file, change_csv_file, coverage_csv_file, program):
+    def __init__(self, score_csv_file, change_csv_file, coverage_csv_file, program, knowledge=100, confidence=100):
         self.code_element_set = CodeElementSet.load_from_file(score_csv_file)
         self.change_matrix = ChangeMatrix.load_from_file(change_csv_file)
         self.coverage_matrix = CoverageMatrix.load_from_file(coverage_csv_file)
         self.program = program
+        self.knowledge = knowledge
+        self.confidence = confidence
         self.faulty_map = {}
 
     def is_faulty(self, code_element):
@@ -57,8 +59,8 @@ class Context(object):
 
 class Defects4JContext(Context):
 
-    def __init__(self, score_csv_file, change_csv_file, coverage_csv_file, program):
-        super().__init__(score_csv_file, change_csv_file, coverage_csv_file, program)
+    def __init__(self, score_csv_file, change_csv_file, coverage_csv_file, program, knowledge=100, confidence=100):
+        super().__init__(score_csv_file, change_csv_file, coverage_csv_file, program, knowledge=knowledge, confidence=confidence)
 
     def get_neighbours(self, code_element, include_self=True):
         parent = Defects4JContext.get_parent(code_element)
@@ -80,12 +82,14 @@ class Defects4JContext(Context):
 
 class SIRContext(Context):
 
-    def __init__(self, score_csv_file, function_csv_file, change_csv_file, coverage_csv_file, program):
+    def __init__(self, score_csv_file, function_csv_file, change_csv_file, coverage_csv_file, program, knowledge=100, confidence=100):
         self.code_element_set = StatementSet.load_from_file(score_csv_file)
         self.method_set = MethodSet.load_from_file(function_csv_file)
         self.change_matrix = ChangeMatrix.load_from_file(change_csv_file)
         self.coverage_matrix = CoverageMatrix.load_from_file(coverage_csv_file)
         self.program = program
+        self.knowledge = knowledge
+        self.confidence = confidence
         self.faulty_map = {}
 
     def get_neighbours(self, code_element, include_self=True):
