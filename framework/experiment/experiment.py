@@ -5,12 +5,13 @@ from natsort import natsorted
 
 from framework.context.context import Defects4JContext
 from framework.context.context import SIRContext
+from framework.context.context import Context
 from framework.utils import rm
 
 
 class Experiment(object):
 
-    def __init__(self, name, context_type):
+    def __init__(self, name: str, context_type: Context):
         self.name = name
         self.context_type = context_type
         self.context = None
@@ -19,7 +20,7 @@ class Experiment(object):
     def configure(self):
         raise NotImplementedError
 
-    def run(self, data_dir, output_dir, knowledge=100, confidence=100):
+    def run(self, data_dir: str, output_dir: str, knowledge=100, confidence=100):
         output_dir = j(output_dir, self.name)
         rm(output_dir, "*")
 

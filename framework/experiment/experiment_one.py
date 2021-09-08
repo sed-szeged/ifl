@@ -6,13 +6,17 @@ from framework.core.oracle import Oracle
 from framework.core.questioner import Questioner
 from framework.exception import InvalidAnswerException
 from framework.experiment.experiment import Experiment
+from framework.context.context import Context
 
 
 class ExperimentOne(Experiment):
+    """
+    Experiment with code-structure based context and discrete score adjustment.
+    """
 
     class Questioner(Questioner):
 
-        def __init__(self, context):
+        def __init__(self, context: Context):
             self.context = context
             self.subject = None
 
@@ -21,7 +25,7 @@ class ExperimentOne(Experiment):
                                   key=lambda ce: (-ce.score, ce.name))[0]
             return self.subject
 
-        def acknowledge(self, answer):
+        def acknowledge(self, answer: Answer):
             if answer == Answer.NO_BUT_SUSPICIOUS:
                 self.subject.score = 0
             elif answer == Answer.NO_AND_NOT_SUSPICIOUS:
@@ -32,7 +36,7 @@ class ExperimentOne(Experiment):
 
     class Oracle(Oracle):
 
-        def __init__(self, context):
+        def __init__(self, context: Context):
             self.context = context
 
         def ask_about(self, subject):
@@ -60,10 +64,13 @@ class ExperimentOne(Experiment):
 
 
 class ExperimentOneB(ExperimentOne):
+    """
+    Experiment with code structure based context and knowledge and confidence based scaling of scores.
+    """
 
     class Questioner(ExperimentOne.Questioner):
 
-        def acknowledge(self, answer):
+        def acknowledge(self, answer: Answer):
             neighbours = self.context.get_neighbours(self.subject)
 
             if answer == Answer.NO:

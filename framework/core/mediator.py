@@ -1,14 +1,17 @@
 from framework.core.answer import Answer
+from framework.context.context import Context
+from framework.core.questioner import Questioner
+from framework.core.oracle import Oracle
 
 
 class Mediator(object):
 
-    def __init__(self, context, questioner, oracle):
+    def __init__(self, context: Context, questioner: Questioner, oracle: Oracle):
         self.context = context
         self.questioner = questioner
         self.oracle = oracle
 
-    def run(self, output_dir):
+    def run(self, output_dir: str):
         iteration = 0
 
         while True:

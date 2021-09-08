@@ -1,3 +1,7 @@
+import json
+from collections import defaultdict
+
+
 class ChangeMatrix(object):
 
     def __init__(self):
@@ -30,5 +34,29 @@ class ChangeMatrix(object):
                     matrix.changes[version] = parts[1:]
 
                 i += 1
+
+        return matrix
+
+
+class JSONChangeMatrix(object):
+
+    def __init__(self):
+        self.changes = defaultdict(set)
+
+    def get_changes(self, version: str):
+        for code_element in self.changes[version]:
+            yield code_element
+
+    @classmethod
+    def load_from_file(cls, json_file_path: str, program: str):
+        matrix = JSONChangeMatrix()
+
+        with open(json_file_path, 'r') as fp:
+            j = json.load(fp)
+
+            for version, data in j[program].items():
+                for item in data:
+                    if item["action"] != "added":
+                        matrix.changes[version].add(item["method"])
 
         return matrix

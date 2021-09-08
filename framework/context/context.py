@@ -4,6 +4,7 @@ from os.path import dirname
 from os.path import join
 
 from framework.context.change import ChangeMatrix
+from framework.context.code_element import CodeElement
 from framework.context.code_element import CodeElementSet
 from framework.context.code_element import StatementSet
 from framework.context.coverage import CoverageMatrix
@@ -21,7 +22,7 @@ class Context(object):
         self.confidence = confidence
         self.faulty_map = {}
 
-    def is_faulty(self, code_element):
+    def is_faulty(self, code_element: CodeElement) -> bool:
         if code_element not in self.faulty_map:
             faulty = False
 
@@ -34,10 +35,10 @@ class Context(object):
 
         return self.faulty_map[code_element]
 
-    def get_neighbours(self, code_element, include_self=True):
+    def get_neighbours(self, code_element: CodeElement, include_self=True):
         raise NotImplementedError
 
-    def save_scores(self, base_path, iteration):
+    def save_scores(self, base_path: str, iteration: int):
         file_path = join(base_path, self.program["name"], self.program["version"], "%d.csv" % iteration)
 
         makedirs(dirname(file_path), exist_ok = True)
@@ -72,7 +73,7 @@ class Defects4JContext(Context):
         return neighbours
 
     @staticmethod
-    def get_parent(code_element):
+    def get_parent(code_element: CodeElement) -> str:
         sep = '.'
         parts = code_element.name.split(sep)
         parent = sep.join(parts[:-1])
@@ -92,7 +93,7 @@ class SIRContext(Context):
         self.confidence = confidence
         self.faulty_map = {}
 
-    def get_neighbours(self, code_element, include_self=True):
+    def get_neighbours(self, code_element: CodeElement, include_self=True):
         parent = self.method_set.get_parent(code_element)
         neighbours = [ce for ce in self.code_element_set.code_elements if ce in parent]
 
