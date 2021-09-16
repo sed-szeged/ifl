@@ -1,15 +1,12 @@
-from random import randint
-
+from framework.context.context import Context
 from framework.core.answer import Answer
 from framework.core.mediator import Mediator
 from framework.core.oracle import Oracle
 from framework.core.questioner import Questioner
-from framework.exception import InvalidAnswerException
 from framework.experiment.experiment import Experiment
-from framework.context.context import Context
 
 
-class ExperimentOne(Experiment):
+class ExperimentGong(Experiment):
     """
     Experiment implementing the algorithm proposed by
     Gong et.al. 'Interactive fault localization leveraging simple user feedback'
