@@ -3,11 +3,11 @@ from os import makedirs
 from os.path import dirname
 from os.path import join
 
-from framework.context.change import ChangeMatrix
+from framework.context.change import ChangeMatrix, JSONChangeMatrix
 from framework.context.code_element import CodeElement
 from framework.context.code_element import CodeElementSet
 from framework.context.code_element import StatementSet
-from framework.context.coverage import CoverageMatrix
+from framework.context.coverage import CoverageMatrix, TraceCoverageMatrix
 from framework.context.method import MethodSet
 
 
@@ -15,8 +15,8 @@ class Context(object):
 
     def __init__(self, score_csv_file, change_csv_file, coverage_csv_file, program, knowledge=100, confidence=100):
         self.code_element_set = CodeElementSet.load_from_file(score_csv_file)
-        self.change_matrix = ChangeMatrix.load_from_file(change_csv_file)
-        self.coverage_matrix = CoverageMatrix.load_from_file(coverage_csv_file)
+        self.change_matrix = JSONChangeMatrix.load_from_file(change_csv_file, program['name'])
+        self.coverage_matrix = TraceCoverageMatrix.load_from_file(coverage_csv_file)
         self.program = program
         self.knowledge = knowledge
         self.confidence = confidence
@@ -51,9 +51,9 @@ class Context(object):
 
             for ce in self.code_element_set.code_elements:
                 data = {
-                    "Name" : ce.name,
-                    "Score" : ce.score,
-                    "Faulty" : self.is_faulty(ce)
+                    "Name": ce.name,
+                    "Score": ce.score,
+                    "Faulty": self.is_faulty(ce)
                 }
                 writer.writerow(data)
 

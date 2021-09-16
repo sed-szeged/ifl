@@ -44,7 +44,8 @@ def do(job):
     e.run(args.datadir, j(args.outdir, args.score, str(job[0]), str(job[1]), str(job[2])), knowledge=job[0], confidence=job[2])
 
 
-pool = Pool(processes=int(args.threads))
-pool.map(do, jobs())
-pool.close()
-pool.join()
+if __name__ == '__main__':
+    pool = Pool(processes=int(args.threads))
+    pool.map(do, jobs())
+    pool.close()
+    pool.join()
