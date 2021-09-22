@@ -1,11 +1,19 @@
 from random import randint
+from typing import Dict
 
+from framework.context.code_element import CodeElement
 from framework.context.context import Context
 from framework.core.answer import Answer
 from framework.core.mediator import Mediator
 from framework.core.oracle import Oracle
 from framework.core.questioner import Questioner
 from framework.experiment.experiment import Experiment
+
+
+def root_likelihood(code_element, context) -> float:
+    tests = context.coverage_matrix.get_tests(with_result=True)
+    raise NotImplementedError()
+    return 42
 
 
 class ExperimentGong(Experiment):
@@ -26,7 +34,16 @@ class ExperimentGong(Experiment):
             return self.subject
 
         def acknowledge(self, answer: Answer):
-            pass  # TODO set the new score here
+            if answer == Answer.CLEAN:
+                code_elements = self.context.code_element_set.code_elements - {self.subject}
+                causes: Dict[CodeElement, float] = {}
+                for code_element in code_elements:
+                    causes[code_element] = root_likelihood(code_element, self.context)
+            elif answer == Answer.FAULTY:
+                print("Doing nothing, going to stop anyway.")
+            else:
+                raise ValueError('Gong experiment do not use code-context.')
+
 
     class Oracle(Oracle):
         def __init__(self, context: Context):
@@ -34,20 +51,14 @@ class ExperimentGong(Experiment):
 
         def ask_about(self, subject):
             if self.context.is_faulty(subject):
-                return Answer.YES
+                return Answer.FAULTY
             else:
-                neighbours = self.context.get_neighbours(subject)
-                faulty_neighbours = [ce for ce in neighbours if self.context.is_faulty(ce)]
-
                 r = randint(0, 100)
 
                 if r > self.context.knowledge:
-                    return Answer.NO
+                    return Answer.FAULTY
                 else:
-                    if len(faulty_neighbours) == 0:
-                        return Answer.NO_AND_NOT_SUSPICIOUS
-                    else:
-                        return Answer.NO_BUT_SUSPICIOUS
+                    return Answer.CLEAN
 
     def configure(self):
         questioner = self.Questioner(self.context)
