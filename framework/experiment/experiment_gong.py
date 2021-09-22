@@ -1,3 +1,5 @@
+from random import randint
+
 from framework.context.context import Context
 from framework.core.answer import Answer
 from framework.core.mediator import Mediator
@@ -16,20 +18,36 @@ class ExperimentGong(Experiment):
 
         def __init__(self, context: Context):
             self.context = context
+            self.subject = None
 
         def next_subject(self):
-            pass
+            self.subject = sorted(self.context.code_element_set.code_elements,
+                                  key=lambda ce: (-ce.score, ce.name))[0]
+            return self.subject
 
         def acknowledge(self, answer: Answer):
-            pass
+            pass  # TODO set the new score here
 
     class Oracle(Oracle):
-
         def __init__(self, context: Context):
             self.context = context
 
         def ask_about(self, subject):
-            pass
+            if self.context.is_faulty(subject):
+                return Answer.YES
+            else:
+                neighbours = self.context.get_neighbours(subject)
+                faulty_neighbours = [ce for ce in neighbours if self.context.is_faulty(ce)]
+
+                r = randint(0, 100)
+
+                if r > self.context.knowledge:
+                    return Answer.NO
+                else:
+                    if len(faulty_neighbours) == 0:
+                        return Answer.NO_AND_NOT_SUSPICIOUS
+                    else:
+                        return Answer.NO_BUT_SUSPICIOUS
 
     def configure(self):
         questioner = self.Questioner(self.context)

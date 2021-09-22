@@ -6,6 +6,7 @@ from multiprocessing import Pool
 from framework.context.code_element import CodeElement
 from framework.context.context import Defects4JContext
 from framework.context.context import SIRContext
+from framework.experiment.experiment_gong import ExperimentGong
 from framework.experiment.experiment_one import Experiment
 from framework.experiment.experiment_one import ExperimentOne
 from framework.experiment.experiment_one import ExperimentOneB
@@ -40,7 +41,7 @@ def jobs():
 
 
 def do(job):
-    e = ExperimentOneB("ex1b", Defects4JContext)
+    e = ExperimentGong("expgong", Defects4JContext)
     e.run(args.datadir, j(args.outdir, args.score, str(job[0]), str(job[1]), str(job[2])), knowledge=job[0], confidence=job[2])
 
 
