@@ -102,3 +102,4 @@ ENV/
 
 # PyCharm
 .idea
+/framework/coverage.dump.graphml

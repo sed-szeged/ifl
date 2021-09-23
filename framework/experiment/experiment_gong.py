@@ -3,6 +3,7 @@ from typing import Dict
 
 from framework.context.code_element import CodeElement
 from framework.context.context import Context
+from framework.context.coverage import TraceCoverageMatrix
 from framework.core.answer import Answer
 from framework.core.mediator import Mediator
 from framework.core.oracle import Oracle
@@ -11,7 +12,12 @@ from framework.experiment.experiment import Experiment
 
 
 def root_likelihood(code_element, context) -> float:
-    tests = context.coverage_matrix.get_tests(with_result=True)
+    tests = context.coverage_matrix.query(
+        TraceCoverageMatrix.AND_OPERATOR,
+        test_result='PASS',
+        type_of='test',
+        neighbor_of_every=(code_element,)
+    )
     raise NotImplementedError()
     return 42
 
@@ -43,7 +49,6 @@ class ExperimentGong(Experiment):
                 print("Doing nothing, going to stop anyway.")
             else:
                 raise ValueError('Gong experiment do not use code-context.')
-
 
     class Oracle(Oracle):
         def __init__(self, context: Context):

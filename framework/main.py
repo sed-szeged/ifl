@@ -20,6 +20,9 @@ parser.add_argument("-o", "--outdir", required=True, help="output directory")
 parser.add_argument("-s", "--score", choices=["dstar", "ochiai", "tarantula"], default="tarantula",
                     help="short name of the algorithm that is used to calculate the score")
 parser.add_argument("-t", "--threads", default=cpu_count() - 1, help="number of usable threads")
+# introduced because concurrence breaks debugging traces, and makes debugging exceedingly difficult
+parser.add_argument("-nc", "--no_concurrence", default=False, action="store_true",
+                    help="remove any concurrence execution")
 
 args = parser.parse_args()
 
@@ -46,7 +49,13 @@ def do(job):
 
 
 if __name__ == '__main__':
-    pool = Pool(processes=int(args.threads))
-    pool.map(do, jobs())
-    pool.close()
-    pool.join()
+    if args.no_concurrence:
+        print("running sequentially")
+        for job in jobs():
+            do(job)
+    else:
+        print("running concurrently")
+        pool = Pool(processes=int(args.threads))
+        pool.map(do, jobs())
+        pool.close()
+        pool.join()
