@@ -11,15 +11,24 @@ from framework.core.questioner import Questioner
 from framework.experiment.experiment import Experiment
 
 
-def root_likelihood(code_element, context) -> float:
+def root_likelihood(symptom, cause, context) -> float:
+    d = len(context.code_element_set.code_elements)
     tests = context.coverage_matrix.query(
         TraceCoverageMatrix.AND_OPERATOR,
-        test_result='PASS',
+        test_result='FAIL',
         type_of='test',
-        neighbor_of_every=(code_element,)
+        neighbor_of_every=(symptom, cause)
     )
-    raise NotImplementedError()
-    return 42
+    p = 0
+    for t in tests:
+        t_name = t[0]
+        s_marks = context.coverage_matrix.query(
+            TraceCoverageMatrix.AND_OPERATOR,
+            type_of='code_element',
+            neighbor_of_every=(t_name,)
+        )
+        p += d/len(s_marks)
+    return p
 
 
 class ExperimentGong(Experiment):
@@ -44,7 +53,7 @@ class ExperimentGong(Experiment):
                 code_elements = self.context.code_element_set.code_elements - {self.subject}
                 causes: Dict[CodeElement, float] = {}
                 for code_element in code_elements:
-                    causes[code_element] = root_likelihood(code_element, self.context)
+                    causes[code_element] = root_likelihood(self.subject, code_element, self.context)
             elif answer == Answer.FAULTY:
                 print("Doing nothing, going to stop anyway.")
             else:

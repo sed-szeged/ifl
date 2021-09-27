@@ -220,4 +220,13 @@ class TraceCoverageMatrix(object):
 
             coverage.parse_traces(archive, trace_files)
 
+        tests = coverage.query(
+            TraceCoverageMatrix.AND_OPERATOR,
+            type_of='test'
+        )
+        for test in tests:
+            test_name = test[0]
+            coverage.key_mapping[test_name] = test_name
+            coverage.name_mapping[test_name] = test_name
+
         return coverage
