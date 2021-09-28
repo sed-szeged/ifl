@@ -9,6 +9,7 @@ from framework.core.mediator import Mediator
 from framework.core.oracle import Oracle
 from framework.core.questioner import Questioner
 from framework.experiment.experiment import Experiment
+import tqdm
 
 
 def root_likelihood(symptom, cause, context) -> float:
@@ -52,12 +53,17 @@ class ExperimentGong(Experiment):
             if answer == Answer.CLEAN:
                 code_elements = self.context.code_element_set.code_elements - {self.subject}
                 causes: Dict[CodeElement, float] = {}
-                for code_element in code_elements:
+                progress_bar = tqdm.tqdm(code_elements, desc='cause probability', unit='code element')
+                for code_element in progress_bar:
                     causes[code_element] = root_likelihood(self.subject, code_element, self.context)
+                root_cause = max(causes.items(), key=lambda item: item[1])
+                print(f"the most probable root cause is {root_cause}")
             elif answer == Answer.FAULTY:
                 print("Doing nothing, going to stop anyway.")
             else:
                 raise ValueError('Gong experiment do not use code-context.')
+
+            print()
 
     class Oracle(Oracle):
         def __init__(self, context: Context):
