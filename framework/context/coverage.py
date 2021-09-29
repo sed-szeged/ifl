@@ -1,3 +1,4 @@
+import math
 import os
 import re
 import tarfile
@@ -161,37 +162,42 @@ class TraceCoverageMatrix(object):
     OR_OPERATOR = 'or'
     AND_OPERATOR = 'and'
 
-    @lru_cache(maxsize=2)
+    @lru_cache(maxsize=10000)
     def query(
             self,
             operator: str,
             test_result: Optional[str] = None,
             type_of: Optional[str] = None,
             neighbor_of_every: Tuple[Union[CodeElement, str, int], ...] = (),
-            neighbor_of_any: Tuple[Union[CodeElement, str, int], ...] = ()
+            not_neighbor_of_every: Tuple[Union[CodeElement, str, int], ...] = (),
+            neighbor_of_any: Tuple[Union[CodeElement, str, int], ...] = (),
+            not_neighbor_of_any: Tuple[Union[CodeElement, str, int], ...] = ()
     ):
         result = []
 
         for node, data in self.graph.nodes(data=True):
-            type_filter = type_of is None or data.get('type', None) == type_of
-            result_filter = test_result is None or data.get('result', None) == test_result
-            neighbors = self.graph.neighbors(node)
-            neighbor_every_filter =\
-                neighbor_of_every == () or all([n in neighbors for n in self.get_graph_key(*neighbor_of_every)])
-            neighbor_any_filter =\
-                neighbor_of_any == () or any([n in neighbors for n in self.get_graph_key(*neighbor_of_any)])
+            neighbors = list(self.graph.neighbors(node))
+            filters = (
+                type_of is None or data.get('type', None) == type_of,
+                test_result is None or data.get('result', None) == test_result,
+                neighbor_of_every == () or all([n in neighbors for n in self.get_graph_key(*neighbor_of_every)]),
+                neighbor_of_any == () or any([n in neighbors for n in self.get_graph_key(*neighbor_of_any)]),
+                not_neighbor_of_every == () or all([n not in neighbors for n in self.get_graph_key(*not_neighbor_of_every)]),
+                not_neighbor_of_any == () or any([n not in neighbors for n in self.get_graph_key(*not_neighbor_of_any)])
+            )
 
             if operator == TraceCoverageMatrix.OR_OPERATOR:
-                if type_filter or result_filter or neighbor_every_filter or neighbor_any_filter:
+                if any(filters):
                     result.append((node, data))
             elif operator == TraceCoverageMatrix.AND_OPERATOR:
-                if type_filter and result_filter and neighbor_every_filter and neighbor_any_filter:
+                if all(filters):
                     result.append((node, data))
             else:
                 raise ValueError(f'unsupported operator: {operator}')
 
         return result
 
+    @lru_cache(maxsize=10000)
     def get_graph_key(self, *items: Union[CodeElement, str, int]):
         keys = []
         for item in items:
@@ -229,4 +235,100 @@ class TraceCoverageMatrix(object):
             coverage.key_mapping[test_name] = test_name
             coverage.name_mapping[test_name] = test_name
 
+        networkx.write_graphml(coverage.graph, 'coverage.dump.graphml')
+
         return coverage
+
+    def calculate_spectrum_metrics(self):
+        all_pass, all_failed = set(), set()
+
+        for test, result in self.get_tests():
+            if result == 'FAIL':
+                all_failed.add(test)
+            elif result == 'PASS':
+                all_pass.add(test)
+            else:
+                assert False
+
+        total_pass, total_fail = len(all_pass), len(all_failed)
+
+        for ce, data in self.get_code_elements():
+            ep, ef = 0, 0
+
+            for node in self.graph.neighbors(ce):
+                data = self.graph.nodes[node]
+
+                assert data['type'] == 'test'
+
+                if data['result'] == 'FAIL':
+                    ef += 1
+                elif data['result'] == 'PASS':
+                    ep += 1
+                else:
+                    assert False
+
+            self.graph.nodes[ce].update(
+                dict(
+                    spectrum_metrics=dict(
+                        ef=ef,
+                        ep=ep,
+                        nf=total_fail - ef,
+                        np=total_pass - ep,
+                    )
+                )
+            )
+
+    def calculate_scores(self):
+        formulae = [tarantula, ochiai, dstar]
+
+        for ce, data in self.get_code_elements():
+            metrics = data['spectrum_metrics']
+
+            result = {}
+
+            for formula in formulae:
+                score = formula(**metrics)
+
+                result[formula.__name__] = score
+
+            self.graph.nodes[ce].update(dict(scores=result))
+
+
+def ochiai(ef=0, ep=0, nf=0, np=0):
+    try:
+        denominator = math.sqrt((ef + nf) * (ef + ep))
+
+        score = ef / denominator
+    except ZeroDivisionError:
+        score = 0.0
+
+    return score
+
+
+def tarantula(ef=0, ep=0, nf=0, np=0):
+    totalfail = ef + nf
+    totalpass = ep + np
+
+    try:
+        nominator = ef / totalfail
+        denominator = (ef / totalfail) + (ep / totalpass)
+
+        score = nominator / denominator
+    except ZeroDivisionError:
+        score = 0.0
+
+    return score
+
+
+def dstar(ef=0, ep=0, nf=0, np=0, exponent=2):
+    totalfail = ef + nf
+
+    nominator = ef ** exponent
+    denominator = ep + (totalfail - ef)
+
+    try:
+        score = nominator / denominator
+    except ZeroDivisionError:
+        score = 0.0
+
+    return score

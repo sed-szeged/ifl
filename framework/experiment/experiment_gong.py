@@ -1,5 +1,5 @@
 from random import randint
-from typing import Dict
+from typing import Dict, Tuple
 
 from framework.context.code_element import CodeElement
 from framework.context.context import Context
@@ -12,8 +12,7 @@ from framework.experiment.experiment import Experiment
 import tqdm
 
 
-def root_likelihood(symptom, cause, context) -> float:
-    d = len(context.code_element_set.code_elements)
+def root_likelihood(symptom, cause, context, d: int) -> float:
     tests = context.coverage_matrix.query(
         TraceCoverageMatrix.AND_OPERATOR,
         test_result='FAIL',
@@ -51,19 +50,43 @@ class ExperimentGong(Experiment):
 
         def acknowledge(self, answer: Answer):
             if answer == Answer.CLEAN:
-                code_elements = self.context.code_element_set.code_elements - {self.subject}
-                causes: Dict[CodeElement, float] = {}
-                progress_bar = tqdm.tqdm(code_elements, desc='cause probability', unit='code element')
-                for code_element in progress_bar:
-                    causes[code_element] = root_likelihood(self.subject, code_element, self.context)
-                root_cause = max(causes.items(), key=lambda item: item[1])
+                print("the answer was CLEAN, propagating scores to root cause...")
+                root_cause = self._get_root_cause()
                 print(f"the most probable root cause is {root_cause}")
+
+                covering_profiles = self.context.coverage_matrix.query(
+                    TraceCoverageMatrix.AND_OPERATOR,
+                    type_of='test',
+                    neighbor_of_every=(root_cause[0],)
+                )
+                covered_by_covering_profiles = self.context.coverage_matrix.query(
+                    TraceCoverageMatrix.AND_OPERATOR,
+                    type_of='code_element',
+                    neighbor_of_any=tuple(item[0] for item in covering_profiles)
+                )
+                not_covering_profiles = self.context.coverage_matrix.query(
+                    TraceCoverageMatrix.AND_OPERATOR,
+                    type_of='test',
+                    not_neighbor_of_any=(root_cause[0],)
+                )
+                self.context.coverage_matrix.calculate_spectrum_metrics()
             elif answer == Answer.FAULTY:
                 print("Doing nothing, going to stop anyway.")
             else:
                 raise ValueError('Gong experiment do not use code-context.')
+            print("propagation finished, scores updated")
 
-            print()
+        def _get_root_cause(self) -> Tuple[CodeElement, float]:
+            code_elements = self.context.code_element_set.code_elements - {self.subject}
+            d = len(self.context.code_element_set.code_elements)
+            causes: Dict[CodeElement, float] = {}
+            progress_bar = tqdm.tqdm(code_elements, desc='cause probability', unit='code element')
+            for code_element in progress_bar:
+                causes[code_element] = root_likelihood(self.subject, code_element, self.context, d)
+            root_cause = max(causes.items(), key=lambda item: item[1])
+            # 2021-09-29: PyCharm type checking is incorrect for this
+            # noinspection PyTypeChecker
+            return root_cause
 
     class Oracle(Oracle):
         def __init__(self, context: Context):

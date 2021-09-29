@@ -3,3 +3,4 @@ networkx==2.6.3
 scipy==1.7.1
 
 tqdm~=4.62.3
+yappi~=1.3.2

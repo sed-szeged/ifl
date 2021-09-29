@@ -9,7 +9,7 @@ from subprocess import run
 from natsort import natsorted
 
 from framework.context.change import ChangeMatrix
-from framework.utils import rm
+from framework.util.os_helpers import rm
 
 parser = argparse.ArgumentParser(description="Creates basic score data from SoDA binaries.")
 
