@@ -103,3 +103,5 @@ ENV/
 # PyCharm
 .idea
 /framework/coverage.dump.graphml
+/framework/irrelevant.dump.graphml
+/framework/relevant.dump.graphml

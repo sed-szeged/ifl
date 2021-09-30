@@ -1,3 +1,5 @@
+import copy
+import json
 import math
 import os
 import re
@@ -84,7 +86,7 @@ class TraceCoverageMatrix(object):
         test_name = match.group('test')
         test_result = match.group('result')
 
-        self.graph.add_node(test_name, type='test', result=test_result)
+        self.graph.add_node(test_name, type='test', name=test_name, result=test_result)
 
         return test_name
 
@@ -239,7 +241,13 @@ class TraceCoverageMatrix(object):
 
         return coverage
 
-    def calculate_spectrum_metrics(self):
+    def sub(self, base_nodes: Tuple[Union[CodeElement, str, int], ...]):
+        sub_coverage = copy.deepcopy(self)
+        base_ids = self.get_graph_key(*base_nodes)
+        sub_coverage.graph = self.graph.subgraph(base_ids)
+        return sub_coverage
+
+    def _calculate_spectrum_metrics(self):
         all_pass, all_failed = set(), set()
 
         for test, result in self.get_tests():
@@ -269,20 +277,22 @@ class TraceCoverageMatrix(object):
 
             self.graph.nodes[ce].update(
                 dict(
-                    spectrum_metrics=dict(
+                    spectrum_metrics=json.dumps(dict(
                         ef=ef,
                         ep=ep,
                         nf=total_fail - ef,
                         np=total_pass - ep,
-                    )
+                    ))
                 )
             )
 
     def calculate_scores(self):
+        self._calculate_spectrum_metrics()
+
         formulae = [tarantula, ochiai, dstar]
 
         for ce, data in self.get_code_elements():
-            metrics = data['spectrum_metrics']
+            metrics = json.loads(data['spectrum_metrics'])
 
             result = {}
 
@@ -291,7 +301,7 @@ class TraceCoverageMatrix(object):
 
                 result[formula.__name__] = score
 
-            self.graph.nodes[ce].update(dict(scores=result))
+            self.graph.nodes[ce].update(dict(scores=json.dumps(result)))
 
 
 def ochiai(ef=0, ep=0, nf=0, np=0):
