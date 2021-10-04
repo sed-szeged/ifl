@@ -1,5 +1,6 @@
+import json
 from random import randint
-from typing import Dict, Tuple
+from typing import Dict, Tuple, Optional
 
 import networkx
 
@@ -42,7 +43,7 @@ class ExperimentGong(Experiment):
     class Questioner(Questioner):
         def __init__(self, context: Context):
             self.context = context
-            self.subject = None
+            self.subject: Optional[CodeElement] = None
 
         def next_subject(self):
             self.subject = sorted(
@@ -75,7 +76,16 @@ class ExperimentGong(Experiment):
                 irrelevant_sub_matrix.calculate_scores()
                 networkx.write_graphml(irrelevant_sub_matrix.graph, 'irrelevant.dump.graphml')
 
-                raise NotImplementedError()
+                print(f"old: {root_cause[0]}")
+                original_score_of_inspected = self.subject.score
+                original_score_of_root_cause = root_cause[0].score
+                print("compute relevant score")
+                relevant_score_of_inspected = relevant_sub_matrix.extract_score(self.subject.name)
+                print("compute irrelevant score")
+                irrelevant_score_of_inspected = irrelevant_sub_matrix.extract_score(self.subject.name)
+                adjustment_weight = relevant_score_of_inspected - irrelevant_score_of_inspected
+                root_cause[0].score = original_score_of_root_cause + adjustment_weight * original_score_of_inspected
+                print(f"new: {root_cause[0]}")
             elif answer == Answer.FAULTY:
                 print("Doing nothing, going to stop anyway.")
             else:

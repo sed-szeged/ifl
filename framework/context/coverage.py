@@ -199,6 +199,15 @@ class TraceCoverageMatrix(object):
 
         return result
 
+    def extract_score(self, name: str) -> float:
+        try:
+            return json.loads(
+                [item for item in self.get_code_elements() if item[1]['name'] == name][0][1]['scores']
+            )[CodeElement.SCORE_TYPE]
+        except:
+            print("something went wrong assuming 0 score")
+            return 0.0
+
     @lru_cache(maxsize=10000)
     def get_graph_key(self, *items: Union[CodeElement, str, int]):
         keys = []
