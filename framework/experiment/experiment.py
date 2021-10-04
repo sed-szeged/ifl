@@ -6,7 +6,7 @@ from natsort import natsorted
 from framework.context.context import Context
 from framework.context.context import Defects4JContext
 from framework.context.context import SIRContext
-from framework.utils import rm
+from framework.util.os_helpers import rm
 
 
 class Experiment(object):

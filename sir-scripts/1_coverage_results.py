@@ -7,7 +7,7 @@ from subprocess import run
 from natsort import natsorted
 from progressbar import ProgressBar
 
-from framework.utils import cp, rm
+from framework.util.os_helpers import cp, rm
 
 parser = argparse.ArgumentParser(description="Builds all versions (including the original); "
                                              "executes all test cases available in the 'runall.sh' script; "

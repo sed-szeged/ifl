@@ -10,7 +10,7 @@ from subprocess import run
 
 from natsort import natsorted
 
-from framework.utils import cp, rm
+from framework.util.os_helpers import cp, rm
 
 parser = argparse.ArgumentParser(description="Builds all versions (including the original); "
                                              "utilizes SourceMeter to analyze the structure of the program; "
