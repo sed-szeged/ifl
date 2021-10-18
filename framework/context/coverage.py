@@ -246,7 +246,7 @@ class TraceCoverageMatrix(object):
             coverage.key_mapping[test_name] = test_name
             coverage.name_mapping[test_name] = test_name
 
-        networkx.write_graphml(coverage.graph, 'coverage.dump.graphml')
+        # networkx.write_graphml(coverage.graph, 'coverage.dump.graphml')
 
         return coverage
 

@@ -1,6 +1,6 @@
 import json
 from random import randint
-from typing import Dict, Tuple, Optional
+from typing import Dict, Tuple, Optional, Set
 
 import networkx
 
@@ -15,7 +15,14 @@ from framework.experiment.experiment import Experiment
 import tqdm
 
 
-def root_likelihood(symptom, cause, context, d: int) -> float:
+def root_likelihood(
+        symptom: CodeElement,
+        cause: CodeElement,
+        inspected: Set[CodeElement],
+        context: Context,
+        d: int
+) -> float:
+    name_of_inspected = [ce.name for ce in inspected]
     tests = context.coverage_matrix.query(
         TraceCoverageMatrix.AND_OPERATOR,
         test_result="FAIL",
@@ -30,7 +37,8 @@ def root_likelihood(symptom, cause, context, d: int) -> float:
             type_of="code_element",
             neighbor_of_every=(t_name,),
         )
-        p += d / len(s_marks)
+        not_inspected_s = [item for item in s_marks if item[1]['name'] not in name_of_inspected]
+        p += d / len(not_inspected_s)
     return p
 
 
@@ -43,7 +51,9 @@ class ExperimentGong(Experiment):
     class Questioner(Questioner):
         def __init__(self, context: Context):
             self.context = context
+            self.size_of_D = len(self.context.code_element_set.code_elements)
             self.subject: Optional[CodeElement] = None
+            self.inspected: Set[CodeElement] = set()
 
         def next_subject(self):
             self.subject = sorted(
@@ -53,6 +63,8 @@ class ExperimentGong(Experiment):
             return self.subject
 
         def acknowledge(self, answer: Answer):
+            self.inspected.add(self.subject)
+
             if answer == Answer.CLEAN:
                 print("the answer was CLEAN, propagating scores to root cause...")
                 root_cause = self._get_root_cause()
@@ -65,7 +77,7 @@ class ExperimentGong(Experiment):
                 )
                 relevant_sub_matrix = self._get_sub_matrix(covering_profiles)
                 relevant_sub_matrix.calculate_scores()
-                networkx.write_graphml(relevant_sub_matrix.graph, 'relevant.dump.graphml')
+                # networkx.write_graphml(relevant_sub_matrix.graph, 'relevant.dump.graphml')
 
                 not_covering_profiles = self.context.coverage_matrix.query(
                     TraceCoverageMatrix.AND_OPERATOR,
@@ -74,7 +86,7 @@ class ExperimentGong(Experiment):
                 )
                 irrelevant_sub_matrix = self._get_sub_matrix(not_covering_profiles)
                 irrelevant_sub_matrix.calculate_scores()
-                networkx.write_graphml(irrelevant_sub_matrix.graph, 'irrelevant.dump.graphml')
+                # networkx.write_graphml(irrelevant_sub_matrix.graph, 'irrelevant.dump.graphml')
 
                 print(f"old: {root_cause[0]}")
                 original_score_of_inspected = self.subject.score
@@ -83,6 +95,7 @@ class ExperimentGong(Experiment):
                 relevant_score_of_inspected = relevant_sub_matrix.extract_score(self.subject.name)
                 print("compute irrelevant score")
                 irrelevant_score_of_inspected = irrelevant_sub_matrix.extract_score(self.subject.name)
+                print(relevant_score_of_inspected, irrelevant_score_of_inspected)
                 adjustment_weight = relevant_score_of_inspected - irrelevant_score_of_inspected
                 root_cause[0].score = original_score_of_root_cause + adjustment_weight * original_score_of_inspected
                 print(f"new: {root_cause[0]}")
@@ -91,6 +104,8 @@ class ExperimentGong(Experiment):
             else:
                 raise ValueError("Gong experiment do not use code-context.")
             print("propagation finished, scores updated")
+
+            self.subject.score = 0
 
         def _get_sub_matrix(self, profiles):
             covered_by_profiles = self.context.coverage_matrix.query(
@@ -107,17 +122,16 @@ class ExperimentGong(Experiment):
             return relevant_sub_matrix
 
         def _get_root_cause(self) -> Tuple[CodeElement, float]:
-            code_elements = self.context.code_element_set.code_elements - {self.subject}
-            d = len(self.context.code_element_set.code_elements)
+            code_elements = self.context.code_element_set.code_elements - self.inspected
             causes: Dict[CodeElement, float] = {}
             progress_bar = tqdm.tqdm(
                 code_elements, desc="cause probability", unit="code element"
             )
             for code_element in progress_bar:
                 causes[code_element] = root_likelihood(
-                    self.subject, code_element, self.context, d
+                    self.subject, code_element, self.inspected, self.context, self.size_of_D
                 )
-            root_cause = max(causes.items(), key=lambda item: item[1])
+            root_cause = min(causes.items(), key=lambda item: (-item[1], item[0].name))
             # 2021-09-29: PyCharm type checking is incorrect for this
             # noinspection PyTypeChecker
             return root_cause
