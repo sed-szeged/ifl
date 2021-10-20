@@ -21,6 +21,8 @@ parser.add_argument("-d", "--datadir", required=True,
 parser.add_argument("-o", "--outdir", required=True, help="output directory")
 parser.add_argument("-s", "--score", choices=["dstar", "ochiai", "tarantula"], default="tarantula",
                     help="short name of the algorithm that is used to calculate the score")
+parser.add_argument("-p", "--projects", nargs="+", required=False, default=[],
+                    help="Name of projects on which the experiments should run")
 parser.add_argument("-t", "--threads", default=cpu_count() - 1, help="number of usable threads")
 # introduced because concurrence breaks debugging traces, and makes debugging exceedingly difficult
 parser.add_argument("-nc", "--no_concurrence", default=False, action="store_true",
@@ -47,7 +49,13 @@ def jobs():
 
 def do(job):
     e = ExperimentGong("expgong", Defects4JContext)
-    e.run(args.datadir, j(args.outdir, args.score, str(job[0]), str(job[1]), str(job[2])), knowledge=job[0], confidence=job[2])
+    e.run(
+        args.datadir,
+        j(args.outdir, args.score, str(job[0]), str(job[1]), str(job[2])),
+        knowledge=job[0],
+        confidence=job[2],
+        projects=args.projects,
+    )
 
 
 if __name__ == '__main__':

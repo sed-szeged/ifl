@@ -20,7 +20,7 @@ class Experiment(object):
     def configure(self):
         raise NotImplementedError
 
-    def run(self, data_dir: str, output_dir: str, knowledge=100, confidence=100):
+    def run(self, data_dir: str, output_dir: str, knowledge=100, confidence=100, projects=[]):
         output_dir = j(output_dir, self.name)
         rm(output_dir, "*")
 
@@ -34,6 +34,9 @@ class Experiment(object):
                 "version": splitext(parts[-1])[0]
             }
             print(program)
+
+            if projects and program['name'] not in projects:
+                continue
 
             function_csv = j(data_dir, program["name"], "%(name)s.%(version)s.function.csv" % program)
             change_csv = j(data_dir, "changeset", "changeset.json")
