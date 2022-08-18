@@ -5,7 +5,7 @@ from os.path import join as j, sep
 from subprocess import run
 
 from natsort import natsorted
-from progressbar import ProgressBar
+from tqdm.auto import tqdm
 
 from framework.utils import cp, rm
 
@@ -54,9 +54,8 @@ for program in natsorted(listdir(base_dir)):
             test_cases = [test_case.strip() for test_case in test_suite_file if not test_case.startswith("echo")]
 
             i = 1
-            tc_bar = ProgressBar(max_value=len(test_cases))
 
-            for command in test_cases:
+            for command in tqdm(test_cases):
                 # Run the test case (commands are relative to the directory containing the runall.sh script)
                 process = run(command, cwd=scripts_dir, shell=True)
 
@@ -77,13 +76,13 @@ for program in natsorted(listdir(base_dir)):
                 # Save coverage result files
                 cp(source_dir, "*.gcov", coverage_dir)
 
+                run("gzip -9 *.gcov", cwd=coverage_dir, shell=True, check=True)
+
                 # Reset coverage data
                 rm(source_dir, "*.gcda")
 
-                tc_bar.update(i)
                 i += 1
 
-            tc_bar.finish()
 
         # Create directory for results
         results_dir = j(out_dir, program, "res", version)
