@@ -6,7 +6,7 @@ from os.path import join as j, basename, sep
 from subprocess import run
 
 from natsort import natsorted
-from progressbar import ProgressBar
+from tqdm.auto import tqdm
 
 parser = argparse.ArgumentParser(description="Creates SoDA coverage and results binaries from raw data.")
 
@@ -41,7 +41,7 @@ for program in natsorted(listdir(data_dir)):
     base_results_dir = j(results_dir, original_version)
 
     # Create results vector in results.txt
-    for version in faulty_versions:
+    for version in tqdm(faulty_versions, desc="version"):
         version_results_dir = j(results_dir, version)
         version_vector_dir = j(results_vector_base_dir, version)
         makedirs(version_vector_dir, exist_ok=True)
@@ -50,10 +50,10 @@ for program in natsorted(listdir(data_dir)):
             test_cases = glob(j(version_results_dir, "t*"))
 
             i = 1
-            bar = ProgressBar(max_value=len(test_cases))
+            # bar = ProgressBar(max_value=len(test_cases))
 
             # Compare each output and return value to the original (base)
-            for outfile in natsorted(test_cases):
+            for outfile in tqdm(natsorted(test_cases), desc="test", leave=False):
                 test_case_name = basename(outfile)
                 id = test_case_name[1:]
 
@@ -79,10 +79,10 @@ for program in natsorted(listdir(data_dir)):
                 }
                 vector_file.write("%(result)s: %(id)s\n" % row_data)
 
-                bar.update(i)
+                # bar.update(i)
                 i += 1
 
-            bar.finish()
+            # bar.finish()
 
     # Create results matrix
     results_matix_path = j(program_dir, "%s.res.SoDA" % program)
@@ -94,9 +94,12 @@ for program in natsorted(listdir(data_dir)):
         check=True)
 
     # Create coverage matrices for all versions
-    for version in versions:
+    for version in tqdm(versions):
         input_path = j(coverage_dir, version)
         output_path = j(program_dir, "%s.%s.cov.SoDA" % (program, version))
+
+        run(["gunzip", "-r", input_path], check=True)
+
         run(["rawDataReader",
              "-t", "coverage",
              "-m", "gcov",
@@ -104,6 +107,8 @@ for program in natsorted(listdir(data_dir)):
              "-p", input_path,
              "-o", output_path],
             check=True)
+
+        run(["gzip", "-r", input_path], check=True)
 
     # Clean up the results and coverage fragments by zipping them
     # -r: recurse into subdirs, -m: move into zip i.e. delete original

@@ -30,7 +30,7 @@ for program in natsorted(listdir(base_dir)):
     versions = glob(j(program_dir, "versions.alt", "versions.orig", "v*"))
     versions.append(j(program_dir, "source.alt", "source.orig"))
 
-    for version_dir in natsorted(versions):
+    for version_dir in tqdm(natsorted(versions), desc="version"):
         # Determine version string: 'orig' -> '0', 'v1' -> '1', 'v2' -> '2', ...
         version = version_dir.split(sep)[-1].split('.')[-1]
         if version.startswith("v"):
@@ -55,7 +55,7 @@ for program in natsorted(listdir(base_dir)):
 
             i = 1
 
-            for command in tqdm(test_cases):
+            for command in tqdm(test_cases, desc="test", leave=False):
                 # Run the test case (commands are relative to the directory containing the runall.sh script)
                 process = run(command, cwd=scripts_dir, shell=True)
 
