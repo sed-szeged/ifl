@@ -3,6 +3,7 @@ import re
 import tarfile
 from functools import lru_cache
 from typing import List
+import pandas as pd
 
 import networkx as nx
 
@@ -170,3 +171,31 @@ class TraceCoverageMatrix(object):
             coverage.parse_traces(archive, trace_files)
 
         return coverage
+
+
+class GZoltarCoverageMatrix(object):
+
+    def __init__(self):
+        self.data = None
+
+    def get_code_elements(self):
+        return self.data.columns.to_list()[:-1]
+
+    def get_tests(self):
+        return self.data.index.to_list()
+
+    def get_coverage_for_code_element(self, code_element):
+        pass
+
+    def get_coverage_for_test(self, test):
+        row: pd.Series = self.data.loc[test, self.get_code_elements()]
+
+        return row.mask(row).dropna().index.to_list()
+
+    @classmethod
+    def load_from_file(cls, file_path):
+        matrix = cls()
+
+        matrix.data = pd.read_csv(file_path, index_col='name')
+
+        return matrix

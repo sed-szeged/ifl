@@ -19,7 +19,7 @@ class CodeElement(object):
         return not self == other
 
     def __repr__(self):
-        return "%(score).5f %(name)s" % self.__dict__
+        return f"{self.score:.5f} {self.name}"
 
     @classmethod
     def create_from_row(cls, row):

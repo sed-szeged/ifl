@@ -1,5 +1,9 @@
 import json
+import os
+import re
 from collections import defaultdict
+from glob import glob
+from typing import Generator
 
 
 class ChangeMatrix(object):
@@ -60,3 +64,33 @@ class JSONChangeMatrix(object):
                         matrix.changes[version].add(item["method"])
 
         return matrix
+
+
+class GZoltarChangeMatrix(object):
+
+    def __init__(self):
+        self.changes = defaultdict(set)
+
+    def get_changes(self, version: str) -> Generator[str]:
+        for code_element in self.changes[version]:
+            yield code_element
+
+    @classmethod
+    def load_from_directory(cls, directory: str, program: str):
+        matrix = cls()
+
+        files = glob(os.path.join(directory, f'{program}.*.buggy.lines'))
+
+        p = re.compile(r'(?P<program>\w+)-(?P<version>\d+).buggy.lines')
+
+        for path in files:
+            m = p.match(path)
+
+            version = m.groupdict()['version']
+
+            with open(path, 'r') as file:
+                for line in file:
+                    java_file, line_num, _ = line.strip().split('#')
+
+                    matrix.changes[version].add(f'{java_file}#{line_num}')
+
